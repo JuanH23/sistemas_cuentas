@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Pages;
+namespace App\Filament\App\Pages;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Closure;

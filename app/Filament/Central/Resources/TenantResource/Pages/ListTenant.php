@@ -6,7 +6,7 @@ use App\Filament\Central\Resources\TenantResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
-class ListTenants extends ListRecords
+class ListTenant extends ListRecords
 {
     protected static string $resource = TenantResource::class;
 

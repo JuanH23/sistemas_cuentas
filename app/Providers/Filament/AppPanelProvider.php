@@ -28,7 +28,7 @@ class AppPanelProvider extends PanelProvider
         return $panel
             ->id('app')
             ->path('app')
-            ->login(Login::class)
+            ->login()
             ->authGuard('web')
             ->colors([
                 'primary' => Color::Blue,
@@ -44,7 +44,7 @@ class AppPanelProvider extends PanelProvider
                 // Widgets\AccountWidget::class,
             ])
             ->middleware([
-                // 🔥 ORDEN CRÍTICO: Tenancy primero
+                //  ORDEN CRÍTICO: Tenancy primero
                 InitializeTenancyByDomain::class,
                 PreventAccessFromCentralDomains::class,
                 
