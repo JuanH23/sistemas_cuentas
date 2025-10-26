@@ -131,33 +131,33 @@ class ProductResource extends Resource
                             ->default(0)
                             ->prefixIcon('heroicon-o-cube-transparent')
                             ->suffix('unidades')
-                            ->reactive()
+                            ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                 self::calculateUnitPrice($set, $get);
-                                
-                                // Alertas de stock
-                                if ($state <= 0) {
-                                    Notification::make()
-                                        ->title('⚠️ Sin Stock')
-                                        ->body('El producto está sin inventario')
-                                        ->warning()
-                                        ->duration(4000)
-                                        ->send();
-                                } elseif ($state < 5) {
-                                    Notification::make()
-                                        ->title('🟡 Stock Bajo')
-                                        ->body("Solo quedan {$state} unidades disponibles")
-                                        ->warning()
-                                        ->duration(4000)
-                                        ->send();
-                                } elseif ($state >= 100) {
-                                    Notification::make()
-                                        ->title('✅ Stock Alto')
-                                        ->body('Inventario óptimo para ventas')
-                                        ->success()
-                                        ->duration(3000)
-                                        ->send();
-                                }
+                    
+                                // // Alertas de stock
+                                // if ($state <= 0) {
+                                //     Notification::make()
+                                //         ->title('⚠️ Sin Stock')
+                                //         ->body('El producto está sin inventario')
+                                //         ->warning()
+                                //         ->duration(4000)
+                                //         ->send();
+                                // } elseif ($state < 5) {
+                                //     Notification::make()
+                                //         ->title('🟡 Stock Bajo')
+                                //         ->body("Solo quedan {$state} unidades disponibles")
+                                //         ->warning()
+                                //         ->duration(4000)
+                                //         ->send();
+                                // } elseif ($state >= 100) {
+                                //     Notification::make()
+                                //         ->title('✅ Stock Alto')
+                                //         ->body('Inventario óptimo para ventas')
+                                //         ->success()
+                                //         ->duration(3000)
+                                //         ->send();
+                                // }
                             })
                             ->helperText(function (Get $get) {
                                 $quantity = $get('quantity') ?? 0;
@@ -200,7 +200,7 @@ class ProductResource extends Resource
                             ->minValue(0)
                             ->prefix('$')
                             ->prefixIcon('heroicon-o-banknotes')
-                            ->reactive()
+                            ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                 self::calculateUnitPrice($set, $get);
                             })
@@ -264,11 +264,11 @@ class ProductResource extends Resource
                                         if ($get('type') === 'producto') {
                                             $quantity = $get('quantity') ?? 1;
                                             $price = $get('price') ?? 0;
-                                            $costPerUnit = (int)$quantity > 0 ? (int)$price / (int)$quantity : 0;
+                                            $costPerUnit = (float)$quantity > 0 ? (float)$price / (float)$quantity : 0;
                                         } else {
-                                            $costPerUnit = $get('price') ?? 0;
+                                            $costPerUnit = (float)$get('price') ?? 0;
                                         }
-                                        return '$' . number_format($costPerUnit, 2, ',', '.');
+                                        return '$' . number_format($costPerUnit, 0, ',', '.');
                                     }),
                                 
                                 Forms\Components\Placeholder::make('profit_amount')
@@ -277,7 +277,7 @@ class ProductResource extends Resource
                                         if ($get('type') === 'producto') {
                                             $quantity = $get('quantity') ?? 1;
                                             $price = $get('price') ?? 0;
-                                            $costPerUnit = (int)$quantity > 0 ? (int)$price / (int)$quantity : 0;
+                                            $costPerUnit = (float)$quantity > 0 ? (float)$price / (float)$quantity : 0;
                                         } else {
                                             $costPerUnit = $get('price') ?? 0;
                                         }
@@ -285,7 +285,7 @@ class ProductResource extends Resource
                                         $margin = $get('profit_margin') ?? 0;
                                         $profit = $margin > 0 ? ($costPerUnit * $margin / 100) : 0;
                                         
-                                        return '$' . number_format($profit, 2, ',', '.');
+                                        return '$' . number_format((float)$profit, 0, ',', '.');
                                     })
                                     ->extraAttributes(['class' => 'text-success-600 font-semibold']),
                                 
@@ -293,7 +293,7 @@ class ProductResource extends Resource
                                     ->label('= Precio Final')
                                     ->content(function (Get $get) {
                                         $unitPrice = $get('unit_price') ?? 0;
-                                        return '$' . number_format($unitPrice, 2, ',', '.');
+                                        return '$' . number_format((float)$unitPrice, 0, ',', '.');
                                     })
                                     ->extraAttributes(['class' => 'text-xl font-bold text-primary-600']),
                                 
@@ -303,7 +303,7 @@ class ProductResource extends Resource
                                         if ($get('type') === 'producto') {
                                             $quantity = $get('quantity') ?? 0;
                                             $unitPrice = $get('unit_price') ?? 0;
-                                            $total = (int)$quantity * (int)$unitPrice;
+                                            $total = (float)$quantity * (float)$unitPrice;
                                             return '$' . number_format($total, 0, ',', '.');
                                         }
                                         return 'N/A';
@@ -390,7 +390,7 @@ class ProductResource extends Resource
                                 return "✅ Este producto es inventario inicial{$dateText}. NO se registrará ningún egreso.";
                             }
                             
-                            return '⚠️ Se registrará un EGRESO de $' . number_format($price, 0, ',', '.') . ' en el flujo de caja de HOY';
+                            return '⚠️ Se registrará un EGRESO de $' . number_format(round((float)$price, -1), 0, ',', '.') . ' en el flujo de caja de HOY';
                         })
                         ->extraAttributes(function (Get $get) {
                             $isInitial = $get('is_initial_inventory') ?? false;

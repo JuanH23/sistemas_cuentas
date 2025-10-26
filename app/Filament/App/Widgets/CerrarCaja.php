@@ -56,8 +56,22 @@ class CerrarCaja extends Widget
             ->exists();
 
         // Calcular totales del día
-        $movements = FinancialMovement::where('cash_flow_id', $cashFlow->id)->get();
-        
+        // $movements = FinancialMovement::where('cash_flow_id', $cashFlow->id)->get();
+        $movements = FinancialMovement::where('cash_flow_id', $cashFlow->id)
+        ->where(function($query) {
+            $query->whereNull('sale_id') // No tiene venta relacionada
+                  ->orWhereHas('sale', function($q) {
+                      $q->whereNull('deleted_at'); // La venta NO está eliminada
+                  });
+        })
+        ->where(function($query) {
+            $query->whereNull('platform_movement_id') // No tiene platform_movement
+                  ->orWhereHas('platformMovement', function($q) {
+                      $q->whereNull('deleted_at'); // El platform_movement NO está eliminado
+                  });
+        })
+        ->get();
+    
         $this->totalIncome = $movements->where('type', 'income')->sum('amount');
         $this->totalExpense = $movements->where('type', 'expense')->sum('amount');
         $this->expectedBalance = $cashFlow->initial_balance + $this->totalIncome - $this->totalExpense;

@@ -28,10 +28,10 @@ class Login extends BaseLogin
             DB::reconnect('tenant');
             DB::setDefaultConnection('tenant');
             
-            Log::info('🔐 Login page: Forced tenant connection', [
-                'tenant' => $tenant->name,
-                'database' => DB::connection()->getDatabaseName(),
-            ]);
+            // Log::info('🔐 Login page: Forced tenant connection', [
+            //     'tenant' => $tenant->name,
+            //     'database' => DB::connection()->getDatabaseName(),
+            // ]);
         }
     }
 }

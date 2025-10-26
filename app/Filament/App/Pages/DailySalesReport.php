@@ -50,22 +50,24 @@ class DailySalesReport extends Page
     // Al montar la página se ejecutan las consultas y se almacena la información.
     public function loadData(): void
     {
-        switch ($this->filtroPeriodo) {
+       switch ($this->filtroPeriodo) {
             case '7dias':
-                $from = now()->subDays(6)->startOfDay();
-                $to   = now()->endOfDay();
+                $from = now()->subDays(6)->format('Y-m-d'); // '2025-10-19'
+                $to   = now()->format('Y-m-d');              // '2025-10-25'
                 break;
             case 'mes':
-                $from = now()->startOfMonth();
-                $to   = now()->endOfMonth();
+                $from = now()->startOfMonth()->format('Y-m-d'); // '2025-10-01'
+                $to   = now()->endOfMonth()->format('Y-m-d');   // '2025-10-31'
                 break;
             default: // 'hoy'
-                $from = now()->startOfDay();
-                $to   = now()->endOfDay();
+                $from = now()->format('Y-m-d'); // '2025-10-25'
+                $to   = now()->format('Y-m-d'); // '2025-10-25'
         }
         // 2) Total ventas en el período
-        $this->periodSalesTotal = Sale::whereBetween('sale_date', [$from, $to])
+        $this->periodSalesTotal = Sale::whereDate('created_at', '>=', $from)
+            ->whereDate('created_at', '<=', $to)
             ->sum('total_amount');
+
 
         // 3) Cambio % vs día anterior (solo si el rango incluye hoy)
         $ayer = Sale::whereBetween('sale_date', [

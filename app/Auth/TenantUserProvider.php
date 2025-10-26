@@ -14,7 +14,7 @@ class TenantUserProvider extends EloquentUserProvider
     protected function ensureTenantConnection(): void
     {
         if (!tenancy()->initialized) {
-            Log::warning('⚠️ No tenant initialized - using central');
+            // Log::warning('⚠️ No tenant initialized - using central');
             config(['database.default' => 'central']);
             DB::purge('mysql');
             DB::purge('tenant');
@@ -34,10 +34,10 @@ class TenantUserProvider extends EloquentUserProvider
         DB::reconnect('tenant');
         DB::setDefaultConnection('tenant');
         
-        Log::info('✅ TenantUserProvider: Forced tenant connection', [
-            'default' => config('database.default'),
-            'database' => DB::connection()->getDatabaseName(),
-        ]);
+        // Log::info('✅ TenantUserProvider: Forced tenant connection', [
+        //     'default' => config('database.default'),
+        //     'database' => DB::connection()->getDatabaseName(),
+        // ]);
     }
 
     public function retrieveByCredentials(array $credentials)
@@ -46,14 +46,14 @@ class TenantUserProvider extends EloquentUserProvider
             return null;
         }
 
-        // ✅ SIEMPRE forzar antes de cualquier query
+        //  SIEMPRE forzar antes de cualquier query
         $this->ensureTenantConnection();
         
-        Log::info('🔐 Retrieving user by credentials', [
-            'email' => $credentials['email'] ?? 'N/A',
-            'connection' => config('database.default'),
-            'database' => DB::connection()->getDatabaseName(),
-        ]);
+        // Log::info('🔐 Retrieving user by credentials', [
+        //     'email' => $credentials['email'] ?? 'N/A',
+        //     'connection' => config('database.default'),
+        //     'database' => DB::connection()->getDatabaseName(),
+        // ]);
 
         $query = $this->newModelQuery();
 
@@ -65,11 +65,11 @@ class TenantUserProvider extends EloquentUserProvider
 
         $user = $query->first();
         
-        Log::info('🔍 User search result', [
-            'found' => $user ? 'YES' : 'NO',
-            'user_id' => $user?->id,
-            'database' => DB::connection()->getDatabaseName(),
-        ]);
+        // Log::info('🔍 User search result', [
+        //     'found' => $user ? 'YES' : 'NO',
+        //     'user_id' => $user?->id,
+        //     'database' => DB::connection()->getDatabaseName(),
+        // ]);
 
         return $user;
     }
@@ -78,11 +78,11 @@ class TenantUserProvider extends EloquentUserProvider
     {
         $this->ensureTenantConnection();
         
-        Log::info('🔍 Retrieving user by ID', [
-            'id' => $identifier,
-            'connection' => config('database.default'),
-            'database' => DB::connection()->getDatabaseName(),
-        ]);
+        // Log::info('🔍 Retrieving user by ID', [
+        //     'id' => $identifier,
+        //     'connection' => config('database.default'),
+        //     'database' => DB::connection()->getDatabaseName(),
+        // ]);
 
         return parent::retrieveById($identifier);
     }

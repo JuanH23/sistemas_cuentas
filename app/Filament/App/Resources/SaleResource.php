@@ -409,7 +409,7 @@ class SaleResource extends Resource
                             ->label('Monto Recibido')
                             ->numeric()
                             ->prefix('$')
-                            ->reactive()
+                            ->live(onBlur: true)
                             ->dehydrated(false)
                             ->visible(fn (Get $get) => $get('payment_method') === 'cash')
                             ->afterStateUpdated(function ($state, Set $set, Get $get) {

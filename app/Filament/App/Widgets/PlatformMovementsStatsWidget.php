@@ -32,6 +32,7 @@ class PlatformMovementsStatsWidget extends BaseWidget
                 DB::raw('SUM(CASE WHEN financial_movements.type = "income" THEN financial_movements.amount ELSE -financial_movements.amount END) as balance')
             )
             ->join('platform_movements', 'financial_movements.platform_movement_id', '=', 'platform_movements.id')
+            ->whereNull('platform_movements.deleted_at')
             ->groupBy('platform_movements.platform_id')
             ->get()
             ->keyBy('platform_id');

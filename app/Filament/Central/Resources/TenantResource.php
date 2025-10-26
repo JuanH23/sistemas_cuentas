@@ -49,17 +49,11 @@ class TenantResource extends Resource
                             ->required()
                             ->unique(table: 'domains', column: 'domain', ignoreRecord: true)
                             ->maxLength(255)
-                            ->helperText('Se generará automáticamente como: nombre-entidad.sistema_cuentas_2.test')
-                            ->placeholder('papeleria-mila.sistema_cuentas_2.test')
+                            ->helperText('Se generará automáticamente como: nombre-entidad.cuentas.duckdns.org')
+                            ->placeholder('papeleria-mila.cuentas.duckdns.org')
                             ->alphaDash()
                             ->suffixIcon('heroicon-o-globe-alt')
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, Forms\Set $set, $get) {
-                                // Si el usuario modifica el dominio manualmente, validar formato
-                                if ($state && !str_contains($state, '.')) {
-                                    $set('domain', $state . '.sistema_cuentas_2.test');
-                                }
-                            }),
+                            ->live(onBlur: true),
                         
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
@@ -264,7 +258,7 @@ class TenantResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTenants::route('/'),
+            'index' => Pages\ListTenant::route('/'),
             'create' => Pages\CreateTenant::route('/create'),
             'edit' => Pages\EditTenant::route('/{record}/edit'),
         ];

@@ -13,7 +13,7 @@ class EnsureTenantConnectionBeforeAuth
         if (!tenancy()->initialized) {
             config(['database.default' => 'central']);
             DB::setDefaultConnection('central');
-            Log::info('🔵 No tenant - using central for auth');
+            // Log::info('🔵 No tenant - using central for auth');
             return;
         }
 
