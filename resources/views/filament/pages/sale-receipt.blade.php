@@ -305,10 +305,16 @@
             <div class="business-info">
                 {{-- Usar teléfono y email del tenant --}}
                 @if(tenant_phone())
-                    Tel: {{ tenant_phone() }}<br>
+                    Tel: {{ tenant_phone() }} /
                 @endif
                 @if(tenant_email())
                     Email: {{ tenant_email() }}<br>
+                @endif
+                @if(tenant_nit())
+                    NIT: {{ tenant_nit() }} /
+                @endif
+                @if(tenant_address())
+                    Dirección: {{ tenant_address() }}<br>
                 @endif
             </div>
         </div>
@@ -471,13 +477,13 @@
         </div>
 
         <!-- BARCODE/VERIFICATION -->
-        <div class="barcode">
+        <!-- <div class="barcode">
             <div style="font-size: 10px; color: #666;">CÓDIGO DE VERIFICACIÓN</div>
             <div class="barcode-number">{{ strtoupper(substr(md5($sale->id . $sale->created_at), 0, 12)) }}</div>
-            <!-- <div style="font-size: 9px; color: #999; margin-top: 5px;">
+            <div style="font-size: 9px; color: #999; margin-top: 5px;">
                 Verificable en: www.papeleriaejemplo.com/verificar
-            </div> -->
-        </div>
+            </div>
+        </div> -->
     </div>
 </body>
 </html>

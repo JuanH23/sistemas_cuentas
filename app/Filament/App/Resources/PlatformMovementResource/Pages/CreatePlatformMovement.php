@@ -8,6 +8,7 @@ use App\Filament\App\Resources;
 use App\Models\CashFlow;
 use App\Models\FinancialMovement;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Parametro; 
 use Filament\Resources\Pages\CreateRecord;
 
 class CreatePlatformMovement extends CreateRecord
@@ -50,6 +51,21 @@ class CreatePlatformMovement extends CreateRecord
             'user_id' => $userId,
             'platform_movement_id' => $movement->id,
         ]);
+
+        $ganancia = Parametro::getValor('ganancia_mov_plataforma', 0);
+
+        if ((float) $ganancia > 0) {
+            FinancialMovement::create([
+                'date'                 => $movement->date,
+                'category'             => 'Ganancia por movimiento de plataforma',
+                'description'          => 'Comisión generada por el movimiento de plataforma #' . $movement->id,
+                'amount'               => $ganancia,
+                'type'                 => FinancialMovement::TYPE_INCOME, // 👈 esto SIEMPRE entra como ingreso
+                'cash_flow_id'         => $cashFlow->id,
+                'user_id'              => $userId,
+                'platform_movement_id' => $movement->id,
+            ]);
+        }
 
         // Recalcular el saldo final del flujo de caja
         $cashFlow->recalculateFinalBalance();

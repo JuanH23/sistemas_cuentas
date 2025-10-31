@@ -104,70 +104,176 @@ class SaleResource extends Resource
                     Forms\Components\Repeater::make('sale_details')
                         ->relationship('saleDetails')
                         ->schema([
-                            Forms\Components\Select::make('product_id')
-                                ->label('Producto / Servicio')
-                                ->options(function () {
-                                    return Product::query()
-                                        ->where(function($query) {
-                                            $query->where('quantity', '>', 0)
-                                                  ->orWhere('type', 'servicio');
-                                        })
-                                        ->get()
-                                        ->mapWithKeys(function ($product) {
-                                            $icon = $product->type === 'servicio' ? '🔧' : '📦';
-                                            $stockInfo = '';
-                                            
-                                            if ($product->type === 'producto') {
-                                                $stockColor = $product->quantity < 5 ? '🔴' : 
-                                                             ($product->quantity < 20 ? '🟡' : '🟢');
-                                                $stockInfo = " {$stockColor} {$product->quantity} unid.";
+                        Forms\Components\Select::make('product_id')
+                            ->label('Producto / Servicio')
+                            ->options(function () {
+                                return Product::query()
+                                    ->orderBy('name')
+                                    ->get()
+                                    ->mapWithKeys(function ($product) {
+                                        $icon = $product->type === 'servicio' ? '🔧' : '📦';
+                                        $stockInfo = '';
+                                        
+                                        if ($product->type === 'producto') {
+                                            if ($product->quantity === 0) {
+                                                $stockInfo = " 🔴 SIN STOCK";
                                             } else {
-                                                $stockInfo = " ✓ Disponible";
+                                                $stockColor = $product->quantity < 5 ? '🔴' : 
+                                                            ($product->quantity < 20 ? '🟡' : '🟢');
+                                                $stockInfo = " {$stockColor} {$product->quantity} unid.";
                                             }
-                                            
-                                            $price = " • $" . number_format($product->unit_price, 0, ',', '.');
-                                            
-                                            return [$product->id => "{$icon} {$product->name}{$stockInfo}{$price}"];
-                                        });
-                                })
-                                ->searchable()
-                                ->preload()
-                                ->required()
-                                ->native(false)
-                                ->reactive()
-                                ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) {
-                                    $product = Product::find($state);
-                                    if (!$product) return;
-                                    
-                                    $unitPrice = $product->unit_price;
-                                    $set('unit_price', $unitPrice);
-                                    
-                                    $quantity = $get('quantity') ?? 1;
-                                    $set('total', $quantity * $unitPrice);
-                                    
-                                    self::updateTotals($livewire);
-                                    
-                                    // Notificaciones mejoradas
-                                    if ($product->type === 'producto') {
-                                        if ($product->quantity < 5 && $product->quantity > 0) {
-                                            Notification::make()
-                                                ->title('⚠️ Stock Crítico')
-                                                ->body("Solo quedan **{$product->quantity} unidades** de {$product->name}")
-                                                ->warning()
-                                                ->duration(5000)
-                                                ->send();
-                                        } elseif ($product->quantity >= 20) {
-                                            Notification::make()
-                                                ->title('✅ Producto Agregado')
-                                                ->body("{$product->name} - Stock suficiente ({$product->quantity} unid.)")
-                                                ->success()
-                                                ->duration(3000)
-                                                ->send();
+                                        } else {
+                                            $stockInfo = " ✓ Disponible";
                                         }
+                                        
+                                        $price = " • $" . number_format($product->unit_price, 0, ',', '.');
+                                        
+                                        return [$product->id => "{$icon} {$product->name}{$stockInfo}{$price}"];
+                                    });
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->native(false)
+                            ->reactive()
+                            ->createOptionForm([
+                                Forms\Components\Section::make('⚡ Crear Producto Rápido')
+                                    ->description('Crea un producto simple sin necesidad de llenar todos los campos')
+                                    ->schema([
+                                        Forms\Components\Grid::make(2)->schema([
+                                            Forms\Components\TextInput::make('name')
+                                                ->label('Nombre del Producto/Servicio')
+                                                ->placeholder('Ej: Corte de cabello + Barba')
+                                                ->required()
+                                                ->prefixIcon('heroicon-o-sparkles')
+                                                ->columnSpan(2),
+                                            
+                                            Forms\Components\Select::make('type')
+                                                ->label('Tipo')
+                                                ->options([
+                                                    'servicio' => '🔧 Servicio',
+                                                    'producto' => '📦 Producto',
+                                                ])
+                                                ->default('servicio')
+                                                ->required()
+                                                ->native(false)
+                                                ->live()
+                                                ->columnSpan(1),
+                                            
+                                            Forms\Components\TextInput::make('unit_price')
+                                                ->label('Precio de Venta')
+                                                ->numeric()
+                                                ->required()
+                                                ->prefix('$')
+                                                ->helperText('El precio al que lo venderás')
+                                                ->columnSpan(1),
+                                            
+                                            Forms\Components\TextInput::make('quantity')
+                                                ->label('Cantidad Inicial')
+                                                ->numeric()
+                                                ->default(0)
+                                                ->visible(fn (Forms\Get $get) => $get('type') === 'producto')
+                                                ->helperText('💡 Si dejas 0, se tratará como servicio (sin control de stock)')
+                                                ->columnSpan(1),
+                                            
+                                            Forms\Components\Textarea::make('description')
+                                                ->label('Descripción (Opcional)')
+                                                ->rows(2)
+                                                ->placeholder('Detalles adicionales...')
+                                                ->columnSpan(2),
+                                        ]),
+                                    ]),
+                            ])
+                            ->createOptionUsing(function (array $data) {
+                                $quantity = $data['quantity'] ?? 0;
+                                $type = $data['type'];
+                                
+                                // Si seleccionó "producto" pero no tiene cantidad, convertir a servicio
+                                if ($type === 'producto' && $quantity === 0) {
+                                    $type = 'servicio';
+                                    
+                                    Notification::make()
+                                        ->title('💡 Convertido a Servicio')
+                                        ->body('Como no tiene stock, se creó como servicio')
+                                        ->info()
+                                        ->duration(4000)
+                                        ->send();
+                                }
+                                
+                                $product = Product::create([
+                                    'name' => $data['name'],
+                                    'type' => $type, // ⭐ Usar el type ajustado
+                                    'unit_price' => $data['unit_price'],
+                                    'price' => $data['unit_price'],
+                                    'quantity' => $quantity,
+                                    'description' => $data['description'] ?? null,
+                                    'profit_margin' => 0,
+                                    'is_initial_inventory' => false,
+                                ]);
+                                
+                                $tipoFinal = $type === 'servicio' ? '🔧 Servicio' : '📦 Producto';
+                                
+                                Notification::make()
+                                    ->title('✅ Creado Exitosamente')
+                                    ->body("'{$data['name']}' → {$tipoFinal}")
+                                    ->success()
+                                    ->duration(4000)
+                                    ->send();
+                                
+                                return $product->id;
+                            })
+                            ->createOptionAction(function (Forms\Components\Actions\Action $action) {
+                                return $action
+                                    ->modalHeading('⚡ Crear Producto Rápido')
+                                    ->modalSubmitActionLabel('Crear Producto')
+                                    ->modalWidth('2xl');
+                            })
+                            ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) {
+                                $product = Product::find($state);
+                                if (!$product) return;
+                                
+                                $unitPrice = $product->unit_price;
+                                $set('unit_price', $unitPrice);
+                                
+                                $quantity = $get('quantity') ?? 1;
+                                $set('total', $quantity * $unitPrice);
+                                
+                                self::updateTotals($livewire);
+                                
+                                // Notificaciones solo para productos con inventario
+                                if ($product->type === 'producto') {
+                                    if ($product->quantity === 0) {
+                                        Notification::make()
+                                            ->title('⚠️ PRODUCTO SIN STOCK')
+                                            ->body("**{$product->name}** no tiene unidades disponibles")
+                                            ->danger()
+                                            ->duration(6000)
+                                            ->send();
+                                    } elseif ($product->quantity < 5 && $product->quantity > 0) {
+                                        Notification::make()
+                                            ->title('⚠️ Stock Crítico')
+                                            ->body("Solo quedan **{$product->quantity} unidades** de {$product->name}")
+                                            ->warning()
+                                            ->duration(5000)
+                                            ->send();
+                                    } elseif ($product->quantity >= 20) {
+                                        Notification::make()
+                                            ->title('✅ Producto Agregado')
+                                            ->body("{$product->name} - Stock suficiente ({$product->quantity} unid.)")
+                                            ->success()
+                                            ->duration(3000)
+                                            ->send();
                                     }
-                                })
-                                ->columnSpan(2),
-                            
+                                } else {
+                                    // Es servicio
+                                    Notification::make()
+                                        ->title('✅ Servicio Agregado')
+                                        ->body("🔧 {$product->name} - Siempre disponible")
+                                        ->success()
+                                        ->duration(3000)
+                                        ->send();
+                                }
+                            })->columnSpan(2),
                             Forms\Components\TextInput::make('quantity')
                                 ->label('Cant.')
                                 ->numeric()
@@ -632,6 +738,13 @@ class SaleResource extends Resource
 
                 
                 Tables\Actions\ActionGroup::make([                    
+                    // Acción: Ver PDF
+                    Tables\Actions\Action::make('view')
+                        ->label('Ver Recibo')
+                        ->icon('heroicon-o-document-text')
+                        ->color('success')
+                        ->url(fn ($record) => route('sales.receipt.view', $record->id))
+                        ->openUrlInNewTab(),
                     // Acción: Descargar PDF
                     Tables\Actions\Action::make('download_receipt')
                         ->label('Descargar PDF')

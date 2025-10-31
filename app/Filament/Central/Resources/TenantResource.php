@@ -30,67 +30,140 @@ class TenantResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Información Básica')
+                    ->description('Datos principales de la entidad')
+                    ->icon('heroicon-o-information-circle')
                     ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->label('Nombre de la Entidad')
-                            ->required()
-                            ->maxLength(255)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, Forms\Set $set, $get) {
-                                if (!$get('id')) {
-                                    // Auto-generar el dominio basado en el nombre
-                                    $slug = Str::slug($state);
-                                    $set('domain', $slug);
-                                }
-                            }),
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\TextInput::make('name')
+                                ->label('Nombre de la Entidad')
+                                ->required()
+                                ->maxLength(255)
+                                ->prefixIcon('heroicon-o-building-office-2')
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function ($state, Forms\Set $set, $get) {
+                                    if (!$get('id')) {
+                                        // Auto-generar el dominio basado en el nombre
+                                        $slug = Str::slug($state);
+                                        $set('domain', $slug);
+                                    }
+                                })
+                                ->columnSpan(1),
+                            
+                            Forms\Components\TextInput::make('domain')
+                                ->label('Dominio')
+                                ->required()
+                                ->maxLength(255)
+                                ->helperText('Se generará automáticamente como: nombre-entidad.cuentas.duckdns.org')
+                                ->placeholder('papeleria-mila.cuentas.duckdns.org')
+                                ->alphaDash()
+                                ->suffixIcon('heroicon-o-globe-alt')
+                                ->live(onBlur: true)
+                                ->columnSpan(1),
+                        ]),
                         
-                        Forms\Components\TextInput::make('domain')
-                            ->label('Dominio')
-                            ->required()
-                            ->unique(table: 'domains', column: 'domain', ignoreRecord: true)
-                            ->maxLength(255)
-                            ->helperText('Se generará automáticamente como: nombre-entidad.cuentas.duckdns.org')
-                            ->placeholder('papeleria-mila.cuentas.duckdns.org')
-                            ->alphaDash()
-                            ->suffixIcon('heroicon-o-globe-alt')
-                            ->live(onBlur: true),
-                        
-                        Forms\Components\TextInput::make('email')
-                            ->label('Email')
-                            ->email()
-                            ->maxLength(255),
-                        
-                        Forms\Components\TextInput::make('phone')
-                            ->label('Teléfono')
-                            ->tel()
-                            ->maxLength(255),
-                    ])->columns(2),
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\TextInput::make('email')
+                                ->label('Email')
+                                ->email()
+                                ->maxLength(255)
+                                ->prefixIcon('heroicon-o-envelope')
+                                ->columnSpan(1),
+                            
+                            Forms\Components\TextInput::make('phone')
+                                ->label('Teléfono')
+                                ->tel()
+                                ->maxLength(255)
+                                ->prefixIcon('heroicon-o-phone')
+                                ->placeholder('300 123 4567')
+                                ->columnSpan(1),
+                        ]),
+                    ])->columns(1),
 
-                Forms\Components\Section::make('Configuración')
+                Forms\Components\Section::make('Información Fiscal y Comercial')
+                    ->description('Datos legales y comerciales de la entidad')
+                    ->icon('heroicon-o-document-text')
                     ->schema([
-                        Forms\Components\Select::make('status')
-                            ->label('Estado')
-                            ->options([
-                                'active' => 'Activo',
-                                'suspended' => 'Suspendido',
-                                'trial' => 'Prueba',
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\TextInput::make('nit')
+                                ->label('NIT / Documento')
+                                ->placeholder('900.123.456-7')
+                                ->maxLength(255)
+                                ->prefixIcon('heroicon-o-identification')
+                                ->helperText('Número de identificación tributaria')
+                                ->columnSpan(1),
+                            
+                            Forms\Components\Textarea::make('address')
+                                ->label('Dirección Fiscal')
+                                ->placeholder('Calle 123 # 45-67, Oficina 890')
+                                ->rows(2)
+                                ->maxLength(500)
+                                ->helperText('Dirección completa de la entidad')
+                                ->columnSpan(1),
+                        ]),
+                        
+                        Forms\Components\FileUpload::make('logo')
+                            ->label('Logo de la Empresa')
+                            ->image()
+                            ->disk('public')
+                            ->directory('tenant-logos')
+                            ->visibility('public')
+                            ->imageEditor()
+                            ->imageEditorAspectRatios([
+                                '1:1',
+                                '16:9',
+                                '4:3',
                             ])
-                            ->required()
-                            ->default('active')
-                            ->live(),
+                            ->maxSize(2048)
+                            ->helperText('Logo de la empresa (máximo 2MB, formatos: JPG, PNG)')
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                            ->imagePreviewHeight('150')
+                            ->panelLayout('integrated')
+                            ->removeUploadedFileButtonPosition('right')
+                            ->uploadButtonPosition('left')
+                            ->uploadProgressIndicatorPosition('left')
+                            ->columnSpanFull(),
+                    ])->columns(2)
+                    ->collapsible()
+                    ->collapsed(false),
+
+                Forms\Components\Section::make('Configuración del Sistema')
+                    ->description('Configuración y límites de la entidad')
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->schema([
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\Select::make('status')
+                                ->label('Estado')
+                                ->options([
+                                    'active' => 'Activo',
+                                    'suspended' => 'Suspendido',
+                                    'trial' => 'Prueba',
+                                ])
+                                ->required()
+                                ->default('active')
+                                ->native(false)
+                                ->live()
+                                ->prefixIcon('heroicon-o-signal')
+                                ->columnSpan(1),
+                            
+                            Forms\Components\TextInput::make('max_users')
+                                ->label('Máximo de Usuarios')
+                                ->numeric()
+                                ->default(10)
+                                ->required()
+                                ->minValue(1)
+                                ->prefixIcon('heroicon-o-users')
+                                ->suffix('usuarios')
+                                ->columnSpan(1),
+                        ]),
                         
                         Forms\Components\Textarea::make('suspension_reason')
                             ->label('Razón de Suspensión')
                             ->visible(fn (Forms\Get $get) => $get('status') === 'suspended')
-                            ->columnSpanFull(),
-                        
-                        Forms\Components\TextInput::make('max_users')
-                            ->label('Máximo de Usuarios')
-                            ->numeric()
-                            ->default(10)
-                            ->required()
-                            ->minValue(1),
-                    ])->columns(2),
+                            ->rows(3)
+                            ->columnSpanFull()
+                            ->placeholder('Ingrese la razón de la suspensión...'),
+                    ])->columns(2)
+                    ->collapsible(),
             ]);
     }
 
@@ -98,11 +171,19 @@ class TenantResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\ImageColumn::make('logo')
+                    ->label('Logo')
+                    ->circular()
+                    ->defaultImageUrl(url('/images/default-logo.png'))
+                    ->size(50)
+                    ->toggleable(),
+                
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->description(fn (Tenant $record): string => $record->nit ? "NIT: {$record->nit}" : ''),
                 
                 Tables\Columns\TextColumn::make('domains.domain')
                     ->label('Dominio')
@@ -113,7 +194,6 @@ class TenantResource extends Resource
                     ->badge()
                     ->color('info')
                     ->formatStateUsing(function ($state, Tenant $record) {
-                        // Obtener el primer dominio
                         return $record->domains->first()?->domain ?? 'Sin dominio';
                     })
                     ->url(function (Tenant $record) {
@@ -122,12 +202,26 @@ class TenantResource extends Resource
                     })
                     ->openUrlInNewTab(),
                 
+                Tables\Columns\TextColumn::make('address')
+                    ->label('Dirección')
+                    ->searchable()
+                    ->wrap()
+                    ->limit(30)
+                    ->tooltip(fn (Tenant $record): ?string => $record->address)
+                    ->toggleable()
+                    ->toggledHiddenByDefault(),
+                
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Estado')
                     ->colors([
                         'success' => 'active',
                         'danger' => 'suspended',
                         'warning' => 'trial',
+                    ])
+                    ->icons([
+                        'heroicon-o-check-circle' => 'active',
+                        'heroicon-o-x-circle' => 'suspended',
+                        'heroicon-o-clock' => 'trial',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'active' => 'Activo',
@@ -140,6 +234,7 @@ class TenantResource extends Resource
                     ->label('Límite Usuarios')
                     ->badge()
                     ->color('gray')
+                    ->icon('heroicon-o-users')
                     ->suffix(' usuarios'),
                 
                 Tables\Columns\TextColumn::make('created_at')
@@ -155,7 +250,18 @@ class TenantResource extends Resource
                         'active' => 'Activo',
                         'suspended' => 'Suspendido',
                         'trial' => 'Prueba',
-                    ]),
+                    ])
+                    ->native(false),
+                
+                Tables\Filters\TernaryFilter::make('logo')
+                    ->label('Con Logo')
+                    ->placeholder('Todos')
+                    ->trueLabel('Con logo')
+                    ->falseLabel('Sin logo')
+                    ->queries(
+                        true: fn ($query) => $query->whereNotNull('logo'),
+                        false: fn ($query) => $query->whereNull('logo'),
+                    ),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([

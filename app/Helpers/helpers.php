@@ -57,3 +57,27 @@ if (!function_exists('tenant_phone')) {
         return tenant_info()?->phone;
     }
 }
+
+if (!function_exists('tenant_nit')) {
+    /**
+     * Obtener el nit del tenant actual
+     * 
+     * @return string|null
+     */
+    function tenant_nit()
+    {
+        return tenant_info()?->nit;
+    }
+}
+
+if (!function_exists('tenant_address')) {
+    /**
+     * Obtener el dirección del tenant actual
+     * 
+     * @return string|null
+     */
+    function tenant_address()
+    {
+        return tenant_info()?->address;
+    }
+}

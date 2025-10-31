@@ -19,6 +19,9 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             'slug',
             'email',
             'phone',
+            'nit',         
+            'address',       
+            'logo',   
             'status',
             'suspended_at',
             'suspension_reason',
@@ -32,6 +35,9 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         'slug',
         'email',
         'phone',
+        'nit',         
+        'address',       
+        'logo',   
         'status',
         'suspended_at',
         'suspension_reason',
@@ -94,5 +100,17 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     public function canAddUser(): bool
     {
         return $this->getUsersCount() < $this->max_users;
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->logo 
+            ? asset('storage/' . $this->logo)
+            : null;
+    }
+
+    public function hasLogo(): bool
+    {
+        return !empty($this->logo);
     }
 }
